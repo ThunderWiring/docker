@@ -1,0 +1,66 @@
+#!/bin/sh
+
+# input1: name of the container($1)
+# input2: name of the mounted directory($2)
+# input3: host-path($3)
+
+set -e
+CONTAINER=$2
+#the directory in the host ubuntu to be attached.
+HOSTPATH=$1
+#the directory in the coontainer to add to it the volume
+CONTPATH=$3
+
+OLD_WORKING_DIR=`pwd`
+NEW_WORKING_DIR=../../../add_volume_C_code
+echo 'Script: container name = ' $1
+echo 'Script: host path = ' $2
+#------------------------------------------------------------------------
+echo 'Script: changing directory to ' $NEW_WORKING_DIR
+cd $NEW_WORKING_DIR
+echo 'Script: removing old binaries'
+rm -f my_nsenter importenv
+# create nsenter executable 
+echo "Script: building nsenter from source: "
+gcc -std=gnu99 -Wall -Werror nsenter.c -o my_nsenter
+# Now build the importenv helper
+echo "Script: building importenv from importenv.c: "
+make LDFLAGS=-static CFLAGS=-Wall importenv
+#------------------------------------------------------------------------
+#get the real path(not the symlink) of the file system which we need to attach to the container.
+REALPATH=$(readlink --canonicalize $HOSTPATH)
+FILESYS=$(df -P $REALPATH | tail -n 1 | awk '{print $6}')
+
+#find on which device the volume(filesystem which we need to attach) sits 
+while read DEV MOUNT JUNK
+do [ $MOUNT = $FILESYS ] && break
+done </proc/mounts
+[ $MOUNT = $FILESYS ] # Sanity check!
+
+#get the real path for DEV:
+DEV=$(readlink --canonicalize $DEV)
+echo "Script: dev =  : " $DEV
+
+while read A B C SUBROOT MOUNT JUNK
+do [ $MOUNT = $FILESYS ] && break
+done < /proc/self/mountinfo 
+[ $MOUNT = $FILESYS ] # Moar sanity check!
+echo "Script: SUBROOT = " $SUBROOT
+
+SUBPATH=$(echo $REALPATH | sed s,^$FILESYS,,)
+DEVDEC=$(printf "%d %d" $(stat --format "0x%t 0x%T" $DEV))
+#------------------------------------------------------------------------
+# since the script 'docker-enter' is sitting with the rest of the API source files
+# in '/api/client' , we need to execute it using 'source' cmd (alias is .)
+echo "Script: executing commands in the container..."
+./container_breach $CONTAINER  sh -c \
+         "[ -b $DEV ] || mknod --mode 0600 $DEV b $DEVDEC"
+./container_breach $CONTAINER  mkdir /tmpmnt
+./container_breach $CONTAINER  mount $DEV /tmpmnt
+./container_breach $CONTAINER  mkdir -p $CONTPATH
+./container_breach $CONTAINER  mount -o bind /tmpmnt/$SUBROOT/$SUBPATH $CONTPATH
+./container_breach $CONTAINER  umount /tmpmnt
+./container_breach $CONTAINER  rmdir /tmpmnt
+echo 'Script: changing directory to '  $OLD_WORKING_DIR
+cd $OLD_WORKING_DIR
+echo "Script: end"
