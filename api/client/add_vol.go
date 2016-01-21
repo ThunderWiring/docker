@@ -18,7 +18,7 @@ func (cli *DockerCli) CmdAdd_vol (args ...string) error {
 	containerName := os.Args[2]
 	pathOnContainer := os.Args[3]
 	pathOnHost    := os.Args[4]
-	bashScriptPath := "../../../add_volume_C_code/script"
+	bashScriptPath := "../../../add_vol_c/script"
 
 	fmt.Println("adding directory %s to container %s " , pathOnHost, containerName)	
 
