@@ -15,20 +15,25 @@ func (cli *DockerCli) CmdAdd_vol (args ...string) error {
 	cmd.Require(flag.Exact, 3)
 	cmd.ParseFlags(args, true)
 
-	containerName := os.Args[2]
-	pathOnContainer := os.Args[3]
-	pathOnHost    := os.Args[4]
+//	containerName := os.Args[2]
+//	pathOnContainer := os.Args[3]
+//	pathOnHost    := os.Args[4]
+
+	pathOnHost := os.Args[2]
+	containerName := os.Args[3]
+	pathOnContainer := os.Args[4]
+
 	bashScriptPath := "../../../add_vol_c/script"
 
 	fmt.Println("adding directory %s to container %s " , pathOnHost, containerName)	
 
-	runBashScript(bashScriptPath, containerName, pathOnContainer, pathOnHost)
+	runBashScript(bashScriptPath, pathOnHost, containerName, pathOnContainer)
 	return nil
 }
 //*******************************************************************
 // runs a bash script which found int path.
-func runBashScript(path string, containerName string,pathOnContainer string,  pathOnHost string) {
-	out , err := exec.Command("/bin/sh", path, containerName,pathOnContainer, pathOnHost).Output()
+func runBashScript(path string,  pathOnHost string, containerName string,   pathOnContainer string) {
+	out , err := exec.Command("/bin/sh", path, pathOnHost, containerName, pathOnContainer).Output()
 	if err != nil {
 		fmt.Println("Error: %s", err)
 	}
