@@ -12,7 +12,7 @@ HOSTPATH=$1
 CONTPATH=$3
 
 OLD_WORKING_DIR=`pwd`
-NEW_WORKING_DIR=../../../add_volume_C_code
+NEW_WORKING_DIR=../../../add_vol_c
 echo 'Script: container name = ' $1
 echo 'Script: host path = ' $2
 #------------------------------------------------------------------------
